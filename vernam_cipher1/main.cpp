@@ -67,17 +67,27 @@ int get_pos_in_alphabet(char c) {
 scene generate_pad_scenes[2] = {
 	scene("generate pads", []() {
 		// ask for num of pads to generate
-
 		int numGeneratedPads = -1;
 		while (numGeneratedPads == -1) {
 			output::info("how many pads do you want to generate?");
 			std::string s;
 			std::getline(std::cin, s);
-			if (is_number(s.c_str()))
+			if (is_number(s.c_str()) && s.length() != 0)
 				numGeneratedPads = atoi(s.c_str());
 			else output::error("invalid input. should be positive whole number");
 		}
-		// now we have number of pads to generate
+		
+		// ask for length of pads?
+
+		// now we have number of pads to generate, ask for filename to save to
+		output::info("enter filename to save to generated pads directory");
+		std::string s;
+		std::getline(std::cin, s);
+
+		std::ofstream file("generated-pads/" + s + ".txt");
+		if (file.fail()) printf("failed\n");
+		file << "ayo\n";
+		file.close();
 
 		// ask for file name (will be saved in local 'generated-pads' directory)
 	}),
@@ -99,7 +109,6 @@ scene main_menu_scenes[3] = {
 		while (!is_input(VK_N)) {
 			if (is_input(VK_Y)) { exit(0); }
 		}
-
 		Sleep(10); // annoying issue where keys pressed whilst waiting for input all load when cin is free
 		main_menu(1);
 	}) 
@@ -126,6 +135,7 @@ void display_options(scene* scenes, void (*option_func)(int selected), int selec
 		}
 		else if (is_input(VK_RETURN)) {
 			//system("cls");
+			std::cin.clear();
 			scenes[selected - 1].on_select();
 			break;
 		}
@@ -135,6 +145,7 @@ void display_options(scene* scenes, void (*option_func)(int selected), int selec
 				scene s = scenes[i];
 				if (s.get_title() == "back") return s.on_select();
 			}
+			std::cin.clear(); // i think this fixes my issue of cin being annoying
 		}
 	}
 }
@@ -161,8 +172,12 @@ int main() {
 	fs::create_directory("generated-pads");
 
 	std::ofstream file("generated-pads/filename.txt");
+	if (file.fail()) printf("failed\n");
 	file << std::hex << "ayo\n";
 	file.close();
+
+
+	//system("pause");
 
 	/*std::string pad = "abc";
 	std::string plaintext = "aaa";
