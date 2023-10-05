@@ -129,6 +129,13 @@ void display_options(scene* scenes, void (*option_func)(int selected), int selec
 			scenes[selected - 1].on_select();
 			break;
 		}
+		else if (is_input(VK_BACK)) {
+			// search for a back option and execute
+			for (int i = 0; i < length; i++) {
+				scene s = scenes[i];
+				if (s.get_title() == "back") return s.on_select();
+			}
+		}
 	}
 }
 
@@ -169,9 +176,9 @@ int main() {
 
 	//std::cout << ciphertext << std::endl;
 
-	std::string plaintext = "bcegexjzm~}!ts$wvxz*)}}{!~#1%#4)'7-<3yyyy?466789:;<=ghijklm_abca";
+	std::string plaintext = "hello";
 	std::string salt = "bbcdasdsetrthfthfghtrgfdgdgrgdrgdrhuk8765rfgffffffffssssssseeeeb";
-	std::string ciphertext = "";
+	std::string ciphertext = ""; // https://www.calcresult.com/misc/cyphers/vernam.html
 
 	// i think this is a good implementation of vernam cipher?
 	for (int i = 0; i < plaintext.length(); i++) {
@@ -183,7 +190,7 @@ int main() {
 
 		if (!(plain_off != -1 && salt_off != -1)) continue;
 
-		int new_off = (plain_off - salt_off) % alphabet.length(); // change this to minus to decrypt
+		int new_off = (plain_off + salt_off) % alphabet.length(); // change this to minus to decrypt
 
 		ciphertext += alphabet[new_off];
 	}
@@ -192,7 +199,7 @@ int main() {
 
 
 	printf("\n\n");
-	system("pause");
+	//system("pause");
 	
 	
 
