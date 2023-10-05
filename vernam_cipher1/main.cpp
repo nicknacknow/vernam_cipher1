@@ -40,21 +40,59 @@ private:
 };
 
 void main_menu(int selected);
+void generate_pad_menu(int selected = 1);
 
-bool is_input(int vKey) {
-	return (GetConsoleWindow() == GetForegroundWindow()) && (GetAsyncKeyState(vKey) & 1);
+bool is_input(int vKey) { 
+	return /*(GetConsoleWindow() == GetForegroundWindow()) &&*/ (GetAsyncKeyState(vKey) & 1);
+}
+
+bool is_number(const char* inp) {
+	for (int i = 0; i < strlen(inp); i++)
+		if (!isdigit(inp[i])) return false;
+	return true;
 }
 
 #define VK_N 0x4E
 #define VK_Y 0x59
 
+static std::string alphabet = " !\"#$%'()*+,-.0123456789:;<=>?@[]^_abcdefghijklmnopqrstuvwxyz{}~"; // for some reason causes errors when add upper alphabet
+
+int get_pos_in_alphabet(char c) {
+	for (int i = 0; i < alphabet.length(); i++)
+		if (alphabet[i] == c) return i;
+	return -1;
+}
+
 // scenes:
+scene generate_pad_scenes[2] = {
+	scene("generate pads", []() {
+		// ask for num of pads to generate
+
+		int numGeneratedPads = -1;
+		while (numGeneratedPads == -1) {
+			output::info("how many pads do you want to generate?");
+			std::string s;
+			std::getline(std::cin, s);
+			if (is_number(s.c_str()))
+				numGeneratedPads = atoi(s.c_str());
+			else output::error("invalid input. should be positive whole number");
+		}
+		// now we have number of pads to generate
+
+		// ask for file name (will be saved in local 'generated-pads' directory)
+	}),
+	scene("back", []() {
+		main_menu(1);
+	}),
+};
+
+
 scene main_menu_scenes[3] = {
 	scene("encrypt / decrypt", []() {
 		printf("hi"); 
 	}),
 	scene("generate one-time pad", []() {
-		printf("hiya"); 
+		generate_pad_menu();
 	}),
 	scene("exit", []() {
 		printf("are you sure? [y/n]\n");
@@ -67,38 +105,47 @@ scene main_menu_scenes[3] = {
 	}) 
 };
 
-void main_menu(int selected = 1) {
-	system("cls");
-	output::info("welcome to my encryption program");
-	output::info("use key arrows to navigate\n");
+void display_options(scene* scenes, void (*option_func)(int selected), int selected, int length) {
+	if (scenes == nullptr) return;
 
-	for (int i = 0; i < 3; i++) {
-		scene s = main_menu_scenes[i];
+	for (int i = 0; i < length; i++) {
+		scene s = scenes[i];
 		int option = i + 1;
 		output::option(option, s.get_title(), option == selected);
 	}
-
 	while (true) {
 		if (is_input(VK_DOWN)) {
 			system("cls");
 			if (selected < 3) selected++;
-			return main_menu(selected);
+			return option_func(selected);
 		}
 		else if (is_input(VK_UP)) {
 			system("cls");
 			if (selected > 1) selected--;
-			return main_menu(selected);
+			return option_func(selected);
 		}
 		else if (is_input(VK_RETURN)) {
 			//system("cls");
-			main_menu_scenes[selected - 1].on_select();
+			scenes[selected - 1].on_select();
 			break;
 		}
 	}
 }
 
-void generate_pad_menu() {
+void main_menu(int selected = 1) {
+	system("cls");
+	output::info("welcome to my encryption program");
+	output::info("use key arrows to navigate\n");
 
+	display_options(main_menu_scenes, main_menu, selected, 3);
+}
+
+void generate_pad_menu(int selected) {
+	system("cls");
+	output::info("generate pads");
+	output::info("use key arrows to navigate\n");
+
+	display_options(generate_pad_scenes, generate_pad_menu, selected, 2);
 }
 
 int main() {
@@ -106,15 +153,11 @@ int main() {
 
 	fs::create_directory("generated-pads");
 
-	std::ofstream file("generated-pads/filename.a", std::ios::binary);
-	file << std::hex << "a\0yo\n";
+	std::ofstream file("generated-pads/filename.txt");
+	file << std::hex << "ayo\n";
 	file.close();
-	
 
-	// filesystem
-	
-
-	std::string pad = "abc";
+	/*std::string pad = "abc";
 	std::string plaintext = "aaa";
 	std::string ciphertext = "";
 
@@ -122,10 +165,33 @@ int main() {
 		
 		printf("%02X %02X %02X\n", pad[i], plaintext[i], pad[i] ^ plaintext[i]);
 		//ciphertext += (plaintext[i] ^ pad[i]);
-	}
+	}*/
 
 	//std::cout << ciphertext << std::endl;
 
+	std::string plaintext = "bcegexjzm~}!ts$wvxz*)}}{!~#1%#4)'7-<3yyyy?466789:;<=ghijklm_abca";
+	std::string salt = "bbcdasdsetrthfthfghtrgfdgdgrgdrgdrhuk8765rfgffffffffssssssseeeeb";
+	std::string ciphertext = "";
+
+	// i think this is a good implementation of vernam cipher?
+	for (int i = 0; i < plaintext.length(); i++) {
+		char plain_c = plaintext[i];
+		char salt_c = salt[i];
+
+		int plain_off = get_pos_in_alphabet(plain_c);
+		int salt_off = get_pos_in_alphabet(salt_c);
+
+		if (!(plain_off != -1 && salt_off != -1)) continue;
+
+		int new_off = (plain_off - salt_off) % alphabet.length(); // change this to minus to decrypt
+
+		ciphertext += alphabet[new_off];
+	}
+
+	printf("%s\n", ciphertext.c_str());
+
+
+	printf("\n\n");
 	system("pause");
 	
 	
