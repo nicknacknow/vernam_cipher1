@@ -7,11 +7,25 @@ namespace fs = std::filesystem;
 
 
 namespace output {
-	void info(const char* msg) {
-		std::cout << "[ " << dye::aqua("nick") << " ] " << msg << std::endl;
+	void info(const char* msg, ...) {
+		std::cout << "[ " << dye::aqua("nick") << " ] ";
+
+		va_list args;
+		va_start(args, msg);
+		vprintf(msg, args);
+		va_end(args);
+
+		std::cout << std::endl;
 	}
-	void error(const char* msg) {
-		std::cout << "[ " << dye::red("nick ANGRY") << " ] " << msg << std::endl;
+	void error(const char* msg, ...) {
+		std::cout << "[ " << dye::red("nick ANGRY") << " ] ";
+
+		va_list args;
+		va_start(args, msg);
+		vprintf(msg, args);
+		va_end(args);
+
+		std::cout << std::endl;
 	}
 
 	void option(int option, const char* msg, bool selected) {
@@ -63,12 +77,28 @@ int get_pos_in_alphabet(char c) {
 	return -1;
 }
 
+std::string generate_pad(int length = 24) {
+	std::string pad = "";
+
+	for (int i = 0; i < length; i++)
+		pad += alphabet[rand() % alphabet.length()];
+
+	return pad;
+}
+
+#undef max
 // scenes:
 scene generate_pad_scenes[2] = {
 	scene("generate pads", []() {
+		while (is_input(VK_RETURN)) Sleep(10);
+
+		//std::cin.clear();
+		//std::cin.ignore(std::numeric_limits<std::streamsize>::max(), ' ');
+		//std::cin.ignore(10000, ' ');
 		// ask for num of pads to generate
 		int numGeneratedPads = -1;
 		while (numGeneratedPads == -1) {
+			std::cin.clear();
 			output::info("how many pads do you want to generate?");
 			std::string s;
 			std::getline(std::cin, s);
@@ -78,18 +108,29 @@ scene generate_pad_scenes[2] = {
 		}
 		
 		// ask for length of pads?
+		int lengthOfPads = 24;
 
-		// now we have number of pads to generate, ask for filename to save to
+		// now we have number of pads to generate, ask for filename to save to (will be saved in local 'generated-pads' directory)
 		output::info("enter filename to save to generated pads directory");
 		std::string s;
 		std::getline(std::cin, s);
 
 		std::ofstream file("generated-pads/" + s + ".txt");
-		if (file.fail()) printf("failed\n");
-		file << "ayo\n";
+		if (file.fail()) {
+			printf("failed\n"); return;
+		}
+
+		// generate pads
+		for (int i = 0; i < numGeneratedPads; i++) {
+			file << generate_pad(lengthOfPads);
+			file << std::endl;
+		}
+
 		file.close();
 
-		// ask for file name (will be saved in local 'generated-pads' directory)
+		// output status, return to scene
+		output::info("%d pads generated in file /generated-pads/%s.txt\n", numGeneratedPads, s.c_str());
+		std::cin.get();
 	}),
 	scene("back", []() {
 		main_menu(1);
@@ -140,12 +181,12 @@ void display_options(scene* scenes, void (*option_func)(int selected), int selec
 			break;
 		}
 		else if (is_input(VK_BACK)) {
+			std::cin.clear(); // i think this fixes my issue of cin being annoying
 			// search for a back option and execute
 			for (int i = 0; i < length; i++) {
 				scene s = scenes[i];
 				if (s.get_title() == "back") return s.on_select();
 			}
-			std::cin.clear(); // i think this fixes my issue of cin being annoying
 		}
 	}
 }
