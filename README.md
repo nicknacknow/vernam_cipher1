@@ -1,0 +1,3 @@
+- created this software to further develop my understanding of encryption
+- i became aware that the 'vernam cipher' was technically an uncrackable technique which interested me
+- so i decided to implement this in a small menu
